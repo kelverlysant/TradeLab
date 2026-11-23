@@ -45,14 +45,17 @@ patrimônio. Primeiro o núcleo precisa pensar corretamente.
 - [ ] Migrações (Alembic)
 
 ## 6. API com FastAPI
-- [ ] Endpoints de estratégias, backtests e métricas
-- [ ] Validação (Pydantic), tratamento de erros, documentação OpenAPI
+- [x] Endpoints de estratégias, backtests e comparação
+- [x] Validação (Pydantic), tratamento de erros (422), documentação OpenAPI em /docs
+- [x] Deploy na Vercel (função Python + página estática no CDN)
+- [ ] Upload de CSV próprio pela API
+- [ ] Persistir experimentos (depende da etapa 5)
 
 ## 7. Interface da plataforma
 - [x] Dashboard em Streamlit: patrimônio, preço e indicadores, drawdown, comparação entre estratégias, eventos de risco
 - [x] Configuração de novos experimentos pela barra lateral
 - [ ] Histórico de backtests (depende da etapa 5 — PostgreSQL)
-- [ ] Front-end web consumindo a API (depende da etapa 6 — FastAPI)
+- [x] Página web consumindo a API (public/index.html, publicada na Vercel)
 
 ## 8. Simulador de paper trading
 - [ ] Broker Simulator, ordens, livro de posições, saldo

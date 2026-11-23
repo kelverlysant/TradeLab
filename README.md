@@ -39,7 +39,9 @@ TradeLab/
 │   ├── raw/                  # CSVs de entrada (ignorados pelo git)
 │   └── processed/
 ├── reports/                  # relatórios gerados pelos scripts
-├── app/streamlit_app.py      # dashboard
+├── app/streamlit_app.py      # dashboard local (Streamlit)
+├── main.py                   # entrada da API (Vercel / uvicorn)
+├── public/                   # página web + Plotly.js
 ├── scripts/
 │   ├── generate_synthetic_data.py
 │   ├── run_single_backtest.py
@@ -50,7 +52,8 @@ TradeLab/
 │   ├── backtesting/engine.py
 │   ├── risk/stop_loss.py
 │   ├── analytics/            # metrics.py, comparison.py
-│   └── visualization/        # gráficos Plotly
+│   ├── visualization/        # gráficos Plotly (Streamlit)
+│   └── api/                  # FastAPI: schemas, service, app
 ├── tests/                    # pytest
 ├── pyproject.toml
 └── ROADMAP.md
@@ -74,7 +77,39 @@ pip install -e ".[dev,ui]"
 
 No Linux/macOS, ative com `source .venv/bin/activate`.
 
-## Dashboard
+## Plataforma web (FastAPI + Vercel)
+
+A API expõe o motor por HTTP e serve uma página web com os gráficos.
+
+```powershell
+python -m uvicorn main:app --reload
+```
+
+- Página: `http://localhost:8000`
+- Documentação interativa da API (Swagger): `http://localhost:8000/docs`
+
+| Método | Rota             | O que faz                                              |
+|--------|------------------|--------------------------------------------------------|
+| GET    | `/api/health`    | Status e versão                                        |
+| GET    | `/api/strategies`| Estratégias disponíveis                                |
+| POST   | `/api/backtest`  | SMA (com Stop opcional), SMA pura e Buy and Hold       |
+| POST   | `/api/compare`   | Comparação em Bull, Bear e Sideways com várias seeds   |
+
+Entradas validadas com Pydantic: parâmetros inválidos retornam **422** com a mensagem do erro.
+
+### Deploy na Vercel
+
+O projeto já está pronto para a Vercel (zero configuração):
+
+- `main.py` na raiz expõe o objeto `app` do FastAPI, que a Vercel transforma em uma função Python;
+- `pyproject.toml` define as dependências e `[tool.vercel] entrypoint = "main:app"`;
+- `public/` (página e Plotly.js) é servido pelo CDN da Vercel.
+
+Passos: em [vercel.com/new](https://vercel.com/new), importe o repositório do GitHub,
+mantenha o preset **FastAPI** detectado e clique em **Deploy**. Cada `git push`
+na branch principal gera um novo deploy automaticamente.
+
+## Dashboard local (Streamlit)
 
 ```powershell
 streamlit run app/streamlit_app.py
@@ -197,8 +232,9 @@ Sideways 0) e volatilidade de 20% a.a. A seed torna as trajetórias reproduzíve
 | 5    | Métricas de desempenho                     | Concluída     |
 | 6    | Stop-Loss com eventos auditados            | Concluída     |
 | 7    | Comparação de cenários (multi-seed)        | Concluída     |
-| 8    | Testes automatizados (100 testes)          | Em evolução   |
+| 8    | Testes automatizados (115 testes)          | Em evolução   |
 | 7*   | Dashboard em Streamlit (primeira versão)   | Concluída     |
+| 6*   | API FastAPI + página web na Vercel         | Concluída     |
 
 Próximos passos em [ROADMAP.md](ROADMAP.md).
 
