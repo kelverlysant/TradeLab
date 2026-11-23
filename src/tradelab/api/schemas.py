@@ -12,11 +12,24 @@ from pydantic import BaseModel, Field, model_validator
 
 Scenario = Literal["bull", "bear", "sideways"]
 
+# Limites para CSV enviado pelo usuário (a Vercel aceita no máximo 4,5 MB por requisição).
+MAX_CSV_CHARS = 1_000_000
+MIN_CSV_ROWS = 60
+MAX_CSV_ROWS = 2520
+
 
 class DataParams(BaseModel):
     scenario: Scenario = "bull"
     seed: int = Field(42, ge=0, le=1_000_000)
     periods: int = Field(504, ge=60, le=2520, description="Quantidade de pregões")
+    csv: str | None = Field(
+        None,
+        max_length=MAX_CSV_CHARS,
+        description=(
+            "Conteúdo de um CSV OHLCV (colunas Date, Open, High, Low, Close, Volume). "
+            f"Quando enviado, substitui os dados sintéticos. Entre {MIN_CSV_ROWS} e {MAX_CSV_ROWS} linhas."
+        ),
+    )
 
 
 class SMAParams(BaseModel):

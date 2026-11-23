@@ -97,6 +97,17 @@ python -m uvicorn main:app --reload
 
 Entradas validadas com Pydantic: parâmetros inválidos retornam **422** com a mensagem do erro.
 
+**Dados próprios:** na página, escolha "CSV próprio" e envie um arquivo com as colunas
+`Date, Open, High, Low, Close, Volume`. O navegador lê o arquivo e manda o conteúdo no campo
+`data.csv` de `/api/backtest`; a API aplica a mesma validação OHLCV da biblioteca. Limites:
+de 60 a 2.520 linhas (cerca de 10 anos de pregões) e até 1 MB. A comparação de cenários
+continua usando dados sintéticos.
+
+```json
+{ "data": { "csv": "Date,Open,High,Low,Close,Volume\n2024-01-02,10.1,10.4,9.9,10.3,1200\n..." },
+  "sma": { "short_window": 10, "long_window": 30 }, "stop_pct": 0.03 }
+```
+
 ### Deploy na Vercel
 
 O projeto já está pronto para a Vercel (zero configuração):

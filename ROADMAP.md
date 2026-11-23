@@ -48,7 +48,7 @@ patrimônio. Primeiro o núcleo precisa pensar corretamente.
 - [x] Endpoints de estratégias, backtests e comparação
 - [x] Validação (Pydantic), tratamento de erros (422), documentação OpenAPI em /docs
 - [x] Deploy na Vercel (função Python + página estática no CDN)
-- [ ] Upload de CSV próprio pela API
+- [x] Upload de CSV próprio pela API (backtest; até 2.520 linhas e 1 MB)
 - [ ] Persistir experimentos (depende da etapa 5)
 
 ## 7. Interface da plataforma

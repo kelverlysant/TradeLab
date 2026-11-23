@@ -51,6 +51,11 @@
     width: 100%; padding: 8px 10px; background: var(--panel-2); color: var(--text);
     border: 1px solid var(--line); border-radius: 6px; font: inherit; font-family: var(--mono);
   }
+  input[type=file] {
+    width: 100%; padding: 6px; background: var(--panel-2); color: var(--text);
+    border: 1px dashed var(--line); border-radius: 6px; font: inherit; font-size: 12px;
+  }
+  aside .note { margin: 6px 0 0; }
   input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
   .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .segmented { display: flex; background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px; padding: 3px; }
@@ -136,16 +141,28 @@
 
 <div class="layout">
   <aside>
-    <h3>Dados sintéticos</h3>
-    <label>Cenário</label>
-    <div class="segmented" id="scenario">
-      <button data-v="bull" class="active">Bull</button>
-      <button data-v="bear">Bear</button>
-      <button data-v="sideways">Sideways</button>
+    <h3>Dados</h3>
+    <div class="segmented" id="source">
+      <button data-v="synthetic" class="active">Sintéticos</button>
+      <button data-v="csv">CSV próprio</button>
     </div>
-    <div class="row">
-      <div><label for="seed">Seed</label><input type="number" id="seed" value="42" min="0"></div>
-      <div><label for="periods">Pregões</label><input type="number" id="periods" value="504" min="60" max="2520" step="21"></div>
+    <div id="synthFields">
+      <label>Cenário</label>
+      <div class="segmented" id="scenario">
+        <button data-v="bull" class="active">Bull</button>
+        <button data-v="bear">Bear</button>
+        <button data-v="sideways">Sideways</button>
+      </div>
+      <div class="row">
+        <div><label for="seed">Seed</label><input type="number" id="seed" value="42" min="0"></div>
+        <div><label for="periods">Pregões</label><input type="number" id="periods" value="504" min="60" max="2520" step="21"></div>
+      </div>
+    </div>
+    <div id="csvFields" style="display:none">
+      <label for="csvFile">Arquivo CSV (OHLCV)</label>
+      <input type="file" id="csvFile" accept=".csv,text/csv">
+      <p class="note">Colunas Date, Open, High, Low, Close, Volume. De 60 a 2.520 linhas, até 1 MB.</p>
+      <p class="note" id="csvInfo"></p>
     </div>
 
     <h3>Estratégia SMA</h3>
@@ -229,7 +246,7 @@
         </div>
       </div>
       <div class="card"><h2>Médias por cenário e experimento</h2><div class="table-wrap" id="summaryTable"></div></div>
-      <p class="note">Usa as janelas SMA, custos e capital da barra lateral. Resultados em dados sintéticos são observações experimentais, não conclusões estatísticas.</p>
+      <p class="note">Usa as janelas SMA, custos e capital da barra lateral. A comparação roda sempre com dados sintéticos, mesmo com um CSV carregado. Resultados em dados sintéticos são observações experimentais, não conclusões estatísticas.</p>
     </section>
 
     <footer>Projeto educacional. Nada aqui é recomendação de investimento; backtests não garantem resultados futuros.</footer>
@@ -308,11 +325,47 @@ function sharedParams() {
   };
 }
 
+// ---------------------------------------------------------------- fonte de dados
+const MAX_CSV_BYTES = 1_000_000;
+const getSource = segmented("source");
+let csvText = null;
+
+$("source").addEventListener("change", () => {
+  const csv = getSource() === "csv";
+  $("synthFields").style.display = csv ? "none" : "block";
+  $("csvFields").style.display = csv ? "block" : "none";
+  if (!csv || csvText) runBacktest();
+});
+
+$("csvFile").addEventListener("change", async () => {
+  const file = $("csvFile").files[0];
+  csvText = null;
+  $("csvInfo").textContent = "";
+  if (!file) return;
+  if (file.size > MAX_CSV_BYTES) {
+    showError(`O arquivo tem ${(file.size / 1e6).toFixed(1)} MB; o limite é 1 MB.`);
+    return;
+  }
+  csvText = await file.text();
+  const rows = csvText.trim().split(/\r?\n/).length - 1;
+  $("csvInfo").textContent = `${file.name} · ${rows.toLocaleString("pt-BR")} linhas`;
+  runBacktest();
+});
+
+function dataParams() {
+  if (getSource() === "csv") return { csv: csvText };
+  return { scenario: getScenario(), seed: +$("seed").value, periods: +$("periods").value };
+}
+
 // ---------------------------------------------------------------- backtest
 async function runBacktest() {
+  if (getSource() === "csv" && !csvText) {
+    showError("Escolha um arquivo CSV na barra lateral.");
+    return;
+  }
   const body = {
     ...sharedParams(),
-    data: { scenario: getScenario(), seed: +$("seed").value, periods: +$("periods").value },
+    data: dataParams(),
     stop_pct: $("useStop").checked ? +$("stop").value / 100 : null,
   };
   $("run").disabled = true; $("tab-bt").classList.add("loading"); showError("");
